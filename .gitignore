@@ -1,3 +1,4 @@
 indexer_logs.log
 __pycache__
 .idea
+venv

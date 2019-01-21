@@ -40,7 +40,6 @@ class Indexer:
 			thread = Thread(target=self.index, args=(start, end), daemon=True)
 			thread.start()
 
-		previous = network_chainhead
 		while True:
 			# wait a lil bit for more blocks to come in
 			time.sleep(self.chainhead_sleep_time_s)
