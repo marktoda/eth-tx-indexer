@@ -1,0 +1,16 @@
+{
+  "infura": {
+    "endpoint": "https://mainnet.infura.io/v3/<projectid>"
+  },
+  "mongo": {
+    "host": "mongodb://localhost:27017",
+    "db": "eth"
+  },
+  "indexer": {
+    "chainhead_wait_time_s": 600,
+    "loader_threads": 10
+  },
+  "logging": {
+    "file": "indexer_logs.log"
+  }
+}
