@@ -38,23 +38,23 @@ class Transaction:
 		self.topics = []
 		self.contract_created = None
 
-	def get_txid(self):
+	def get_txid(self) -> Hexdata:
 		return self.txid
 
-	def is_contract_deployment(self):
+	def is_contract_deployment(self) -> bool:
 		return self.recipient.is_null_address()
 
-	def is_contract_call(self):
+	def is_contract_call(self) -> bool:
 		return True if self.data and not self.is_contract_deployment() else False
 
-	def contract_call_type(self):
+	def contract_call_type(self) -> str:
 		method_id: str = self.data.get()[:10]
 		if method_id in Transaction.KNOWN_METHOD_IDS:
 			return Transaction.KNOWN_METHOD_IDS[method_id]
 		else:
 			return method_id
 
-	def insert_tx_receipt_data(self, tx_receipt):
+	def insert_tx_receipt_data(self, tx_receipt: dict) -> None:
 		"""
 		Inserts data from the transaction receipt
 		:param tx_receipt: An object containing topics array, gas used, status code, deployed contract
@@ -73,7 +73,7 @@ class Transaction:
 		self.gas = int(tx_receipt["gasUsed"], 16)
 
 	@staticmethod
-	def from_json(json_obj):
+	def from_json(json_obj: dict):
 		height = int(json_obj["blockNumber"], 16)
 		txid = Hexdata(json_obj["hash"])
 		sender = Address(json_obj["from"])
@@ -85,6 +85,10 @@ class Transaction:
 		if "input" in json_obj and len(json_obj["input"]) > 2:
 			data = Hexdata(json_obj["input"])
 		return Transaction(height, txid, sender, recipient, amount, gas_price, gas, data)
+
+	@staticmethod
+	def remove_transactions(height: int) -> None:
+		Transaction.db.remove({"height": height})
 
 	# db things
 
@@ -114,14 +118,3 @@ class Transaction:
 		if self.is_contract_deployment():
 			model["contract_created"] = self.contract_created
 		Transaction.db.insert_one(model)
-
-	@staticmethod
-	def get_latest_block_number() -> int:
-		recent_tx = Transaction.db.find({}).sort("height", pymongo.DESCENDING).limit(1)
-		if recent_tx.count() == 0:
-			chainhead = 0
-		else:
-			recent_tx = recent_tx[0]
-			chainhead = recent_tx["height"]
-		logging.info(f"DB Chainhead: {chainhead}")
-		return chainhead

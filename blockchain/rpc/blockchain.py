@@ -7,10 +7,8 @@ from typing import List
 import logging
 import requests
 
+from blockchain.block import Block
 from blockchain.hexdata import Hexdata
-from blockchain.transaction import Transaction
-
-Block = List[Transaction]
 
 
 class Blockchain():
@@ -20,7 +18,7 @@ class Blockchain():
 	def __init__(self, endpoint: str = "localhost:8545"):
 		self.endpoint = endpoint
 
-	def make_json_rpc_call(self, method: str, params: List):
+	def make_json_rpc_call(self, method: str, params: List) -> dict:
 		"""
 		Makes a JSON-RPC call
 		:param method: The JSON-RPC method to call
@@ -60,12 +58,11 @@ class Blockchain():
 		block = self.make_json_rpc_call(Blockchain.GET_BLOCK_METHOD, [hex(number), True])
 		if "transactions" not in block:
 			logging.error(f'Invalid block at height {number} from {self.endpoint}: {block}')
-		result_block: Block = []
-		for tx in block["transactions"]:
-			tx = Transaction.from_json(tx)
-			if tx.is_contract_call() or tx.is_contract_deployment():
-				tx.insert_tx_receipt_data(self.get_transaction_receipt(tx.get_txid()))
-			result_block.append(tx)
+		result_block = Block.from_json(block)
+		# Inject transaction receipt data for contract calls and deployments
+		for transaction in result_block.get_transactions():
+			if transaction.is_contract_call() or transaction.is_contract_deployment():
+				transaction.insert_tx_receipt_data(self.get_transaction_receipt(transaction.get_txid()))
 		return result_block
 
 	def get_transaction_receipt(self, txid: Hexdata) -> List[List[Hexdata]]:
